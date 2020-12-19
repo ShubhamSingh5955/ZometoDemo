@@ -46,6 +46,8 @@ public class MainActivity extends AppCompatActivity {
     private MyAdapter recyclerView_adapter;
     private List<Restaurant> restaurantsList;
     private Context context;
+    private String currentFeed;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -102,24 +104,32 @@ public class MainActivity extends AppCompatActivity {
                         //calling zometo
                         restaurantsList= new ArrayList<>(50);
 
-                        getApi().getNearbyRestaurants(location.getLatitude(),location.getLongitude(),20,5000,"95cf87e7f544695fa28e72b900924d91")
-                                .enqueue(new Callback<ApiResponse>() {
+                        Retrofit retrofit = new Retrofit.Builder()
+                                .baseUrl("https://developers.zomato.com/api/v2.1/")
+                                .addConverterFactory(GsonConverterFactory.create())
+                                .build();
+
+                        ZomatoApi zomatoApi = retrofit.create(ZomatoApi.class);
+
+                        Call<ApiResponse> call = zomatoApi.getNearbyRestaurants(location.getLatitude(),location.getLongitude(),20,5000,"95cf87e7f544695fa28e72b900924d91");
+
+                        call.enqueue(new Callback<ApiResponse>() {
                                     @Override
                                     public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
 
                                         if(response!=null){
 
                                             List<Restaurant> restaurants=response.body().getRestaurants();
-                                            if(response!=null){
-                                                Log.d("restorant", String.valueOf(response.body().getRestaurants() ));
+                                            if(restaurants!=null){
+                                                Log.d("restorant", String.valueOf(restaurants.get(0).getName()));
                                             }
+
+
 
                                             for (int i = 0; i < restaurants.size(); i++) {
                                                 restaurantsList.add(new Restaurant());
                                             }
                                             recyclerView_adapter = new MyAdapter(restaurantsList,context);
-                                            RecyclerView.ItemDecoration itemDecoration = new DividerItemDecoration(context, DividerItemDecoration.VERTICAL);
-                                            recyclerView.addItemDecoration(itemDecoration);
                                             recyclerView.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
                                             recyclerView.setAdapter(recyclerView_adapter);
 
@@ -153,17 +163,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-    }
-
-    private Retrofit getRetrofit(){
-        return new Retrofit.Builder()
-                .baseUrl("https://developers.zomato.com/api/v2.1/")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-    }
-
-    private ZomatoApi getApi(){
-        return  getRetrofit().create(ZomatoApi.class);
     }
 
 }
